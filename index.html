@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Price Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="bg-shapes">
+        <div class="shape s1"></div>
+        <div class="shape s2"></div>
+        <div class="shape s3"></div>
+    </div>
+
+    <div class="wrapper">
+        <div class="card">
+            <div class="card-header">
+                <h1>🚗 Car Price Predictor</h1>
+                <p>Fill in your car's details to get an instant price estimate</p>
+            </div>
+
+            <form method="post" accept-charset="utf-8" name="Modelform">
+                <div class="form-group">
+                    <label for="company">Company</label>
+                    <select class="form-control" id="company" name="company" required
+                            onchange="load_car_models('company','car_models')">
+                        {% for company in companies %}
+                        <option value="{{ company }}">{{ company }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="car_models">Model</label>
+                    <select class="form-control" id="car_models" name="car_models" required>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="year">Year of purchase</label>
+                        <select class="form-control" id="year" name="year" required>
+                            {% for year in years %}
+                            <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group half">
+                        <label for="fuel_type">Fuel type</label>
+                        <select class="form-control" id="fuel_type" name="fuel_type" required>
+                            {% for fuel in fuel_types %}
+                            <option value="{{ fuel }}">{{ fuel }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="kilo_driven">Kilometers driven</label>
+                    <input type="number" class="form-control" id="kilo_driven" name="kilo_driven"
+                           placeholder="e.g. 45000" required min="0">
+                </div>
+
+                <button type="button" class="predict-btn" onclick="send_data()">Predict Price</button>
+            </form>
+
+            <div class="result-box" id="prediction"></div>
+        </div>
+    </div>
+
+<script>
+    function load_car_models(company_id, car_model_id) {
+        var company = document.getElementById(company_id);
+        var car_model = document.getElementById(car_model_id);
+        car_model.value = "";
+        car_model.innerHTML = "";
+        {% for company in companies %}
+            if (company.value == "{{ company }}") {
+                {% for model in car_models %}
+                    {% if company in model %}
+                        var newOption = document.createElement("option");
+                        newOption.value = "{{ model }}";
+                        newOption.innerHTML = "{{ model }}";
+                        car_model.options.add(newOption);
+                    {% endif %}
+                {% endfor %}
+            }
+        {% endfor %}
+    }
+
+    function form_handler(event) {
+        event.preventDefault();
+    }
+
+    function send_data() {
+        document.querySelector('form').addEventListener("submit", form_handler);
+
+        var fd = new FormData(document.querySelector('form'));
+        var xhr = new XMLHttpRequest({mozSystem: true});
+        var predictionBox = document.getElementById('prediction');
+
+        xhr.open('POST', '/predict', true);
+        predictionBox.className = 'result-box loading';
+        predictionBox.innerHTML = "Calculating price...";
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == XMLHttpRequest.DONE) {
+                predictionBox.className = 'result-box show';
+                var price = Number(xhr.responseText).toLocaleString('en-IN');
+                predictionBox.innerHTML = "Estimated Price: <span>₹ " + price + "</span>";
+            }
+        };
+        xhr.send(fd);
+    }
+
+    // Populate models for the first company on page load
+    window.onload = function () {
+        load_car_models('company', 'car_models');
+    };
+</script>
+</body>
+</html>
